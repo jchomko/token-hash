@@ -1,33 +1,19 @@
-
-
 var startPrice;
 var startBlock;
 var offerPriceDecrement;
 var endPrice;
 var currentPrice;
 var dutchSaleActive;
+var saleActive;
+var preSaleActive;
 var timer;
-let tokenNames = new Map();
-var provider;
-tokenNames.set(0, "1x1 Binary");
-tokenNames.set(1, "2x2 Binary");
-tokenNames.set(2, "4x4 Binary");
-tokenNames.set(3, "8x8 Binary");
-tokenNames.set(4, "16x16 Binary");
-tokenNames.set(5, "32x32 Binary");
-tokenNames.set(6, "64x64 Binary");
-tokenNames.set(7, "128x128 Binary");
-tokenNames.set(8, "256x256 Binary");
-tokenNames.set(9, "512x512 Binary");
 
-tokenNames.set(10, "1x1 Blue Duration");
-tokenNames.set(11, "2x2 Blue Duration");
-tokenNames.set(12, "4x4 Blue Duration");
-tokenNames.set(13, "8x8 Blue Duration");
-tokenNames.set(14, "16x16 Blue Duration");
-tokenNames.set(15, "32x32 Blue Duration");
-tokenNames.set(16, "64x64 Blue Duration");
-tokenNames.set(17, "128x128 Blue Duration");
+
+var provider;
+
+var ethersContract;
+
+const ownerNames = new Map();
 
 
 // if (window.ethereum) {
@@ -42,19 +28,60 @@ tokenNames.set(17, "128x128 Blue Duration");
 //   setTimeout(handleEthereum, 3000); // 3 seconds
 // }
 //
-// function handleEthereum() {
-//   const { ethereum } = window;
-//   if (ethereum && ethereum.isMetaMask) {
-//     console.log('Ethereum successfully detected!');
-//     // Access the decentralized web!
-//   } else {
-//     console.log('Please install MetaMask!');
-//   }
-// }
+
+function getSha(value) {
+  var obj = new jsSHA("SHA3-256", "TEXT");
+  obj.update(value);
+  var hexHash = obj.getHash("HEX");
+  var dec = parseInt(hexHash, 16);
+  var decModulo = dec % 999;
+  return decModulo;
+}
+
+function getTokenHash() {
+  // var tokenRand = (Math.random()*1000).toFixed(0);
+  // var sr = tokenRand + '';
+  // var s = "RANDOM" + tokenRand.toString();
+  // var hash = getSha(s);
+
+  var demoRand = (Math.random() * (window.demoHashes.length - 1)).toFixed(0);
+  while(demoRand == 420 || demoRand == 69){
+    demoRand = (Math.random() * (window.demoHashes.length - 1)).toFixed(0);
+  }
+
+  var output = demoRand + ", " + window.demoHashes[demoRand];
+  return output
+}
+
+async function generateSvgs() {
+  // var svg1 =
+  document.getElementById("svg1").textContent = getTokenHash();
+  document.getElementById("svg2").textContent = getTokenHash();
+  document.getElementById("svg3").textContent = getTokenHash();
+  document.getElementById("svg4").textContent = getTokenHash();
+  document.getElementById("svg5").textContent = getTokenHash();
+  document.getElementById("svg6").textContent = getTokenHash();
+
+  // svg1.setAttribute("textContent",output);
+}
+
+generateSvgs();
+
+function handleEthereum() {
+  const {
+    ethereum
+  } = window;
+  if (ethereum && ethereum.isMetaMask) {
+    console.log('Ethereum successfully detected!');
+    // Access the decentralized web!
+  } else {
+    console.log('Please install MetaMask!');
+  }
+}
 
 async function loadWeb3() {
 
-      // For MetaMask or Mist compatibility:
+  // For MetaMask or Mist compatibility:
 
 
   if (window.ethereum) {
@@ -66,11 +93,16 @@ async function loadWeb3() {
     //ENS provider
     provider = new ethers.providers.Web3Provider(window.ethereum)
 
-    // .then(function(res) {
-    //   updateStatus("Connected to: " + res.substr(1, 8));
-    // }, function(err) {
-    //   console.log(err)
-    // })
+
+    const network = "homestead";
+    provider = ethers.getDefaultProvider(network, {
+      etherscan: "QUIA2G2DDEUE527S3FF3ENP3FZYE7Z5ZBC",
+      infura: "d7597cd29eec44f9987c10c446edfaca",
+      alchemy: "b1q6TScVzZvCa849Vvn3Bz6i-gBgEwFd"
+    })
+
+    ethersContract = new ethers.Contract(window.contractInfo.address, window.contractInfo.abi, provider);
+
 
     var subscriptionId = window.web3.eth.subscribe('newBlockHeaders', function(error, result) {
       if (!error) {
@@ -80,17 +112,23 @@ async function loadWeb3() {
     }).on("connected", function(subscriptionId) {
       console.log("subscribed as: ", subscriptionId);
     }).on("data", function(blockHeader) {
-      // let elapsed = Date.now()-timer;
-      // console.log(elapsed);
-      // timer = Date.now();
-      // console.log("block ",blockHeader);
-      // console.log(blockHeader.number);
-      // updatePriceLocal(blockHeader.number);
-      updatePriceContract();
+
+      // updatePriceContract();
       getTokensSold();
+      updateTokenToClaim();
+
     }).on("error", console.error);
-  }else{
-    console.log("cant load window.ethereum");
+
+  } else {
+
+    window.addEventListener('ethereum#initialized', handleEthereum, {
+      once: true,
+    });
+
+    setTimeout(handleEthereum, 3000); // 3 seconds
+
+    // console.log("cant load window.ethereum");
+
   }
 
 }
@@ -101,150 +139,195 @@ async function connect() {
   window.contract = await loadContract();
   getTokensSold();
 
-  await getPriceVariables();
+  // await getPriceVariables();
   // updatePriceLocal();
-  updatePriceContract();
+  // updatePriceContract();
 }
 
 async function load() {
 
+  //testing to see if this will work after connectino
+  // if(window.ethereum){
+  //   // loadWeb3();
+  // if (window.ethereum) {
+  //   var acct = await getCurrentAccount();
+  //   console.log("current acct :", acct);
+  //   if(acct != null){
+  //     getTokensSold();
+  //   }
+  // }
+  // window.web3.eth.getAccounts(function(err, accounts){
+  //   if (err != null) console.error("An error occurred: "+err);
+  //   else if (accounts.length == 0) console.log("User is not logged in to MetaMask");
+  //   else console.log("User is logged in to MetaMask");
+  // });
+  //   getCurrentAccount();
+  // //
+  // }
+  // getCurrentAccount();
 
   await loadWeb3();
-  // await tryConnectPop();
+
   window.contract = await loadContract();
   getTokensSold();
-  // updatePrice();
-  await getPriceVariables();
-  // updatePriceLocal();
-  updatePriceContract();
+
+  // await getPriceVariables();
+
+  // updatePriceContract();
+  updateTokenToClaim();
 }
 
-async function getPriceVariables() {
-  dutchSaleActive = await window.contract.methods.dutchAuctionActive().call();
-  startPrice = await window.contract.methods.startPrice().call();
-  startBlock = await window.contract.methods.startBlock().call();
-  offerPriceDecrement = await window.contract.methods.offerPriceDecrement().call();
-  endPrice = await window.contract.methods.endPrice().call();
-  console.log(startPrice, startBlock, offerPriceDecrement, endPrice);
-}
 
-function updatePriceLocal(blockNumber) {
+async function updateTokenToClaim() {
 
-  // calculate price for previous block, so price is always
+  saleActive = await window.contract.methods.standardSaleActive().call();
+  preSaleActive = await window.contract.methods.preSaleActive().call();
+  // var tokenToClaim = await window.contract.methods.totalSupply().call();
 
-  currentPrice = startPrice - (blockNumber - startBlock) * offerPriceDecrement;
-  if (currentPrice < endPrice || currentPrice > startPrice) {
-    currentPrice = endPrice;
-  }
-  console.log(currentPrice);
+  // let tokenCounter = document.getElementById('tokencounter');
+  // let counterText  = tokenToClaim + "/1000";
+  // tokenCounter.innerHTML = counterText;
+
 
   var saleInfo;
 
-  if (dutchSaleActive) {
-    // const weiPrice = await window.contract.methods.getDutchPrice().call();
-    // if( !isNaN(currentPrice) ){
-      const ethPrice = web3.utils.fromWei(currentPrice.toString(), 'ether');
-    // }
-    // console.log(ethPrice);
-    saleInfo = "Purchase for " + Number.parseFloat(ethPrice).toPrecision(6) + " ETH";
+  if (preSaleActive) {
+    var tokenToClaim = await window.contract.methods.totalSupply().call();
+    var currentPrice = await window.contract.methods.pricePerPiece().call();
+    const ethPrice = web3.utils.fromWei(currentPrice.toString(), 'ether');
+    // saleInfo = "Purchase for " + Number.parseFloat(ethPrice).toPrecision(6) + " ETH";
+    if (tokenToClaim > 1000) {
+      saleInfo = "Sold out! 1000/1000";
+    } else {
+      saleInfo = "Mint token " + tokenToClaim + " for " + ethPrice + " ETH";
+    }
   } else {
-    saleInfo = " Purchasing paused "
+    saleInfo = "Presale mint paused "
   }
 
-  let currentPrices = document.getElementsByClassName('currentPrice');
-  for (var i = 0; i < currentPrices.length; i++) {
-    currentPrices[i].innerHTML = saleInfo;
+  let preSaleButton = document.getElementById('preSaleMintButton');
+  if(preSaleButton != null){
+    preSaleButton.innerHTML = saleInfo;
   }
-}
 
-async function updatePriceContract() {
-
-  dutchSaleActive = await window.contract.methods.dutchAuctionActive().call();
-  var saleInfo;
-
-  if (dutchSaleActive) {
-    const weiPrice = await window.contract.methods.getDutchPrice().call();
-    const ethPrice = web3.utils.fromWei(weiPrice, 'ether');
-    // console.log(ethPrice);
-    saleInfo = "Purchase for " + Number.parseFloat(ethPrice).toPrecision(6) + " ETH";
+  if (saleActive) {
+    var tokenToClaim = await window.contract.methods.totalSupply().call();
+    var currentPrice = await window.contract.methods.pricePerPiece().call();
+    const ethPrice = web3.utils.fromWei(currentPrice.toString(), 'ether');
+    if (tokenToClaim > 1000) {
+      saleInfo = "Sold out! 1000/1000";
+    } else {
+      saleInfo = "Mint token " + tokenToClaim + " for " + ethPrice + " ETH";
+    }
   } else {
-    saleInfo = " Purchasing paused "
+    saleInfo = "Minting Closed "
   }
 
-  let currentPrices = document.getElementsByClassName('currentPrice');
-  for (var i = 0; i < currentPrices.length; i++) {
-    currentPrices[i].innerHTML = saleInfo;
+  let publicButton = document.getElementById('publicMintButton');
+  if(publicButton != null){
+    publicButton.innerHTML = saleInfo;
   }
+
+  // currentPrices[0].innerHTML = saleInfo;
+
+
 }
 
 async function getTokensSold() {
-  let buttons = document.getElementsByClassName('buybutton');
 
-  for(var button of buttons){
-    // console.log(button.id);
+  var numMinted = await window.contract.methods.totalSupply().call();
+  var owners = await window.contract.methods.getOwners(0, numMinted).call();
+  var elements = document.getElementById('numbersPurchased').getElementsByTagName('tbody');
+  // var table = document.getElementById('numbersPurchased');
 
-    try{
-     //this will throw an error if the token isn't minted
-     var isMinted = await window.contract.methods.isTokenMinted(button.id).call();
-     // console.log(isMinted);
-     if(isMinted){
-       var tokenOwner = await window.contract.methods.ownerOf(button.id).call();
-       // button.innerHTML = "Collected by ";
-       var ensName = await provider.lookupAddress(tokenOwner);
-       if(ensName != null){
-         button.innerHTML = "Collected by "+ `<a href=https://etherscan.io/address/${tokenOwner} target="_blank" >` + ensName + "</a>";
-       }else{
-         button.innerHTML = "Collected by "+ `<a href=https://etherscan.io/address/${tokenOwner} target="_blank" >` + tokenOwner.substr(1, 8) + "</a>";
-         // button.innerHTML =
-       }
-       // button.onclick = "";
-       // var clickLink = `window.open("https://etherscan.io/address/${tokenOwner}", "_blank");`
-
-       // console.log(targetLink);
-       //This works, it just keeps adding links tho!
-
-       // var link = document.createElement("a");
-       // link.href = `https://etherscan.io/address/${tokenOwner}`;
-       // link.target = "_blank";
-       // // var link =
-       // button.parentNode.insertBefore(link, button);
-       // button.parentNode.removeChild(button);
-       // link.appendChild(button);
-
-
-
-      //  button.onclick = function() {
-      //   // location.href= targetLink;
-      //   // let link = targetLink;
-      //   window.contract.methods.ownerOf(button.id).call().then(function(res) {
-      //     var targetLink = `https://etherscan.io/address/${res}`
-      //     window.open(targetLink);
-      //     }, function(err) {
-      //       console.log(err)
-      //     })
-      // };
-       button.classList.add("sold");
-    }
-    }catch(err){
-     console.log(err);
-    }
-
+  //Add rows
+  while (elements[0].rows.length < owners.length) {
+    elements[0].insertRow(0);
   }
+
+  //Update data
+  for (var i = 0; i < elements[0].rows.length; i++) {
+    var hash = window.demoHashes[i];
+    if( i == 69 ){
+      hash = 420;
+    }
+    if( i == 420){
+      hash = 69;
+    }
+    var output = '<td class="alignright">' + i + '</td> <td class="alignleft">' + hash + '</td>  <td class="ellipsis"><span> <a href="https://opensea.io/' + owners[i] + '?search[sortBy]=LISTING_DATE&search[query]=token%20hash" target="_blank">' + owners[i] + '</a></span></td> ';
+    elements[0].rows[elements[0].rows.length - 1 - i].innerHTML = output;
+  }
+
+  //Update names
+  // for (var i = 0; i < elements[0].rows.length; i++) {
+  //   var output = "";
+  //   if (ownerNames.has(owners[i])) {
+  //      output = '<td class="alignright">' + i + '</td> <td class="alignleft">' + window.demoHashes[i] + '</td>  <td class="ellipsis"><span> <a href="https://opensea.io/' + owners[i] + '?search[sortBy]=LISTING_DATE&search[query]=token%20hash" target="_blank">' + ownerNames.get(owners[i]) + '</a></span></td> ';
+  //   } else {
+  //     provider.lookupAddress(owners[i]).then(function(err, res) {
+  //       //Save the name and set the button text
+  //       var hash = "temp value";
+  //       if (res != null) {
+  //         ownerNames.set(owners[i], res);
+  //         output = '<td class="alignright">' + i + '</td> <td class="alignleft">' + window.demoHashes[i] + '</td>  <td class="ellipsis"><span> <a href="https://opensea.io/' + owners[i] + '?search[sortBy]=LISTING_DATE&search[query]=token%20hash" target="_blank">' + res + '</a></span></td> ';
+  //
+  //         // output = '<td>' + i + '</td> <td>' + window.demoHashes[i] + '</td> <td>' + res + '</td> '
+  //       } else {
+  //         ownerNames.set(owners[i], owners[i]);
+  //         output = '<td class="alignright">' + i + '</td> <td class="alignleft">' + window.demoHashes[i] + '</td>  <td class="ellipsis"><span> <a href="https://opensea.io/' + owners[i] + '?search[sortBy]=LISTING_DATE&search[query]=token%20hash" target="_blank">' + owners[i] + '</a></span></td> ';
+  //
+  //         // output = '<td>' + i + '</td> <td>' + window.demoHashes[i] + '</td> <td>' + owners[i] + '</td> '
+  //       }
+  //     });
+  //   }
+  //   elements[0].rows[elements[0].rows.length - 1 - i].innerHTML = output;
+  // }
+
 
 }
 
-// async function Reverse(address) {
+//ENs name stuff for list
+// var id=document.getElementById('addrow').getElementsByTagName('tbody')[0];
+// var i = 0;
+
+
+//Only update the list if we have new owners - this will mean that the list won't update if someone just moves or buys a token
+// if( owners.length > elements[0].rows.length){
 //
-//   // var hash = namehash.hash('foo.eth')
+//   for(var owner of owners){
+//   // for(var i=0; i < owners.length; i ++){
+//   // owners.forEach(function (owner, i){
+//      //check for ENS name
+//      if(ownerNames.has(owners[i])){
+//        output = '<td>'+i+'</td> <td>'+hash+'</td> <td>'+ownerNames.get(owners[i])+'</td> '
+//      }else{
+//           provider.lookupAddress(owners[i]).then(function(err, res){
+//           //Save the name and set the button text
+//           var hash  = "temp value";
+//           if(res != null){
+//            ownerNames.set(owners[i], res);
+//            output = '<td>'+i+'</td> <td>'+hash+'</td> <td>'+res+'</td> '
+//          }else{
+//            ownerNames.set(owners[i], owners[i]);
+//            output = '<td>'+i+'</td> <td>'+hash+'</td> <td>'+owners[i]+'</td> '
+//          }
+//         })
 //
-//     var lookup=address.toLowerCase().substr(2) + '.addr.reverse'
-//     var ResolverContract=await web3.eth.ens.getResolver(lookup);
-//     // console.log(ResolverContract)
-//     var nh= namehash(lookup);
-//     var name=await ResolverContract.methods.name(nh).call()
-//     console.log(name);
-//     return name;
+//      }
+//
+//        //Generate hash
+//       //  window.contract.methods.generateHash(i).call().then(function (err, hash){
+//       //   if( i < elements[0].rows.length){
+//       //     elements[0].rows[i].innerHTML = output; //<td> <a href=https://testnets.opensea.io/assets/0x1fd6e8026c44956d7994926a70981fb34919419d'+owners[i]+' target="_blank">Bid</a></td>
+//       //   }else{
+//       //     var newrow = elements[0].insertRow();
+//       //     newrow.innerHTML = output;  //<td> <a href=https://testnets.opensea.io/assets/0x1fd6e8026c44956d7994926a70981fb34919419d'+owners[i]+' target="_blank">Bid</a></td>
+//       //   }
+//       // });
+//    }
 // }
+
+
 
 function updateStatus(status) {
   const statusEl = document.getElementById('connectButton');
@@ -256,24 +339,59 @@ async function loadContract() {
   return await new window.web3.eth.Contract(contractInfo.abi, contractInfo.address); // "0xd2bD647DF33d0A87D01d90333eBE68F64B8a6279"); //
 }
 
+//
+// async function mintDutch(tokenId) {
+//
+//   if (dutchSaleActive) {
+//
+//     const account = await getCurrentAccount();
+//     const price = await window.contract.methods.getDutchPrice().call();
+//     // console.log(price);
+//     const t = await window.contract.methods.buyDutch(tokenId).send({
+//       // value: web3.utils.toWei("0.5", 'ether'),
+//       value: price,
+//       from: account
+//     }, function(error, transactionHash) {
+//       if (!error) {
+//         console.log(transactionHash);
+//
+//         if (window.confirm(`Congratulations! ${tokenNames.get(tokenId)} is yours, and will arrive in your wallet shortly. Click OK to view the transaction on Etherscan`)) {
+//            window.open(`http://etherscan.io/tx/${transactionHash}`, target="_blank");
+//         };
+//         // alert(`Congratulations! ${tokenNames.get(tokenId)} is yours, and will arrive in your wallet shortly. Transaction hash: ` + transactionHash);
+//       } else {
+//         console.log(error);
+//       }
+//     });
+//
+//     getTokensSold();
+//
+//   }
+// }
 
-async function mintDutch(tokenId) {
+async function preSaleMint() {
 
-  if (dutchSaleActive) {
+  const account = await getCurrentAccount();
 
-    const account = await getCurrentAccount();
-    const price = await window.contract.methods.getDutchPrice().call();
-    // console.log(price);
-    const t = await window.contract.methods.buyDutch(tokenId).send({
-      // value: web3.utils.toWei("0.5", 'ether'),
-      value: price,
+  console.log(window.whitelistAddresses);
+  console.log(parseInt(account));
+
+  if (!window.whitelistAddresses.includes(parseInt(account, 16))) {
+
+    alert(`Account address ${account} is not in the whitelist!`);
+
+  } else {
+
+    var currentPrice = await window.contract.methods.pricePerPiece().call();
+    const t = await window.contract.methods.preMint().send({
+      value: currentPrice,
       from: account
     }, function(error, transactionHash) {
       if (!error) {
         console.log(transactionHash);
 
-        if (window.confirm(`Congratulations! ${tokenNames.get(tokenId)} is yours, and will arrive in your wallet shortly. Click OK to view the transaction on Etherscan`)) {
-           window.open(`http://etherscan.io/tx/${transactionHash}`, target="_blank");
+        if (window.confirm(`Congratulations! Your token will arrive in your wallet shortly. Click OK to view the transaction on Etherscan`)) {
+          window.open(`http://etherscan.io/tx/${transactionHash}`, target = "_blank");
         };
         // alert(`Congratulations! ${tokenNames.get(tokenId)} is yours, and will arrive in your wallet shortly. Transaction hash: ` + transactionHash);
       } else {
@@ -281,35 +399,72 @@ async function mintDutch(tokenId) {
       }
     });
 
+    updateTokenToClaim();
     getTokensSold();
 
   }
+
 }
 
-// async function mintToken(tokenId) {
-//
-//   const account = await getCurrentAccount();
-//
-//   const t = await window.contract.methods.buy(tokenId).send({
-//     value: 1000000000000000000,
-//     from: account
-//   }, function(error, transactionHash) {
-//     if (!error) {
-//       console.log(transactionHash);
-//     } else {
-//       console.log(error);
-//     }
-//   });
-//
-//   getTokensSold();
-//
-// }
+async function publicMint() {
+
+  const account = await getCurrentAccount();
+  var currentPrice = await window.contract.methods.pricePerPiece().call();
+
+  const t = await window.contract.methods.mint().send({
+    value: currentPrice,
+    from: account
+  }, function(error, transactionHash) {
+    if (!error) {
+      console.log(transactionHash);
+      if (window.confirm(`Congratulations! Your token will arrive in your wallet shortly. Click OK to view the transaction on Etherscan`)) {
+        window.open(`http://etherscan.io/tx/${transactionHash}`, target = "_blank");
+      };
+      // alert(`Congratulations! ${tokenNames.get(tokenId)} is yours, and will arrive in your wallet shortly. Transaction hash: ` + transactionHash);
+    } else {
+      console.log(error);
+    }
+  });
+
+  updateTokenToClaim();
+  getTokensSold();
+
+}
+
+ethereum.on('accountsChanged', handleAccountsChanged);
+
+// For now, 'eth_accounts' will continue to always return an array
+function handleAccountsChanged(accounts) {
+  if (accounts.length === 0) {
+    // MetaMask is locked or the user has not connected any accounts
+    console.log('Please connect to MetaMask.');
+  } else {
+    getCurrentAccount();
+  }
+}
 
 async function getCurrentAccount() {
-  const accounts = await window.ethereum.send('eth_requestAccounts');
-  updateStatus("Connected to: " + accounts.result[0].substr(1, 8));
+
+  // ethereum
+  //   .request({ method: 'eth_requestAccounts' })
+  //   .then(handleAccountsChanged)
+  //   .catch((err) => {
+  //     if (err.code === 4001) {
+  //       // EIP-1193 userRejectedRequest error
+  //       // If this happens, the user rejected the connection request.
+  //       console.log('Please connect to MetaMask.');
+  //     } else {
+  //       console.error(err);
+  //     }
+  //   });
+
+  const accounts = await ethereum.request({
+    method: 'eth_requestAccounts'
+  });
+  updateStatus("Connected to: " + accounts[0].substr(1, 8));
   // const accounts = await window.web3.eth.getAccounts();
-  return accounts.result[0];
+  return accounts[0];
 }
 
+//this calls a bunch of web3 functions at start, but opens metamask without prompting so a bit messy
 load();

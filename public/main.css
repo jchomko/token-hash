@@ -39,6 +39,7 @@
 }
 
 .embed-below-image{
+  display: none;
   width: 80%;
   height: 100%;
 }
@@ -64,8 +65,11 @@ a:hover {
 
 .buybutton{
     /* bottom: 0px; */
-    position: relative;
+    /* position: relative; */
     margin-top: 10px;
+    /* position: relative;
+    display: inline;
+    float: left; */
 }
 .available {
 	color: #A9A9A9;
@@ -111,7 +115,7 @@ a:hover {
 
 .title {
   font-weight: bold;
-  padding-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
 }
 
 .album {
@@ -123,6 +127,12 @@ a:hover {
   display: inline;
   padding-right: .3rem;
 }
+
+#numbersPurchased{
+  width: 98%;
+}
+
+
 
 button {
 	border-color: #363636;
@@ -158,13 +168,20 @@ img {
   /* margin-bottom:1.5rem; */
 }
 
+.samplesvg{
+  float: left;
+  margin-right: 2%;
+  margin-bottom: 2%;
+  width: 31.33%;
+}
+
 #connectButton{
-  top: 10px;
+  /* top: 10px; */
   /* position: absolute; */
   /* right: 15px; */
-  position: relative;
+  /* position: relative;
   display: inline;
-  float: left;
+  float: left; */
 }
 
 #past-shows {
@@ -172,9 +189,55 @@ img {
   padding-top: 1.5rem;
 }
 
-td {
+table{
+  width: 100%;
+}
+
+.first {
+    width: 50%;
+}
+.ellipsis {
+    position: relative;
+}
+.ellipsis:before {
+    content: '&nbsp;';
+    visibility: hidden;
+}
+.ellipsis span {
+  text-align: center;
+    position: absolute;
+    left: 0;
+    right: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+.td {
+  text-align: center;
   vertical-align: baseline;
-  padding-right: 1.5rem;
+  /* padding-right: 1.5rem; */
+}
+
+.aligncenter{
+
+  text-align: center;
+}
+
+#ownername{
+  text-overflow: ellipsis;
+}
+
+.alignleft {
+  width: 10%;
+  text-align: left;
+}
+
+
+.alignright {
+  width: 10%;
+  text-align: right;
 }
 
 .album-writeup p {
@@ -194,6 +257,7 @@ td {
   .mobile-only{
     display: block;
   }
+
   .b-pad {
     padding-bottom: 1rem;
   }
@@ -215,6 +279,15 @@ td {
   .embed-below-image{
     width: 100%;
     height: 100%;
+  }
+
+
+  .samplesvg{
+    float: left;
+    margin-right: 20px;
+    margin-bottom: 20px;
+    width: 100%;
+    /* width: 47%; */
   }
 
 
