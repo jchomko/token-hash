@@ -229,8 +229,6 @@ async function updateTokenToClaim() {
   }
 
   // currentPrices[0].innerHTML = saleInfo;
-
-
 }
 
 async function getTokensSold() {
@@ -282,7 +280,6 @@ async function getTokensSold() {
   //   }
   //   elements[0].rows[elements[0].rows.length - 1 - i].innerHTML = output;
   // }
-
 
 }
 
@@ -338,36 +335,6 @@ function updateStatus(status) {
 async function loadContract() {
   return await new window.web3.eth.Contract(contractInfo.abi, contractInfo.address); // "0xd2bD647DF33d0A87D01d90333eBE68F64B8a6279"); //
 }
-
-//
-// async function mintDutch(tokenId) {
-//
-//   if (dutchSaleActive) {
-//
-//     const account = await getCurrentAccount();
-//     const price = await window.contract.methods.getDutchPrice().call();
-//     // console.log(price);
-//     const t = await window.contract.methods.buyDutch(tokenId).send({
-//       // value: web3.utils.toWei("0.5", 'ether'),
-//       value: price,
-//       from: account
-//     }, function(error, transactionHash) {
-//       if (!error) {
-//         console.log(transactionHash);
-//
-//         if (window.confirm(`Congratulations! ${tokenNames.get(tokenId)} is yours, and will arrive in your wallet shortly. Click OK to view the transaction on Etherscan`)) {
-//            window.open(`http://etherscan.io/tx/${transactionHash}`, target="_blank");
-//         };
-//         // alert(`Congratulations! ${tokenNames.get(tokenId)} is yours, and will arrive in your wallet shortly. Transaction hash: ` + transactionHash);
-//       } else {
-//         console.log(error);
-//       }
-//     });
-//
-//     getTokensSold();
-//
-//   }
-// }
 
 async function preSaleMint() {
 
