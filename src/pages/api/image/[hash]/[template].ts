@@ -3,7 +3,7 @@ import { loadTemplateWithTokenHash } from "@/lib/templates";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { webkit } from "playwright";
 
-const VIEWPORT_FOR_TEMPLATE: Record<Template, Viewport> = {
+const VIEWPORT_FOR_TEMPLATE = {
   [Template.Fidenza]: { width: 1000, height: 1200 },
 };
 
