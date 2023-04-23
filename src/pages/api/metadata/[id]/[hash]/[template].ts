@@ -15,8 +15,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader("Cache-Control", `public, s-maxage=${6 * 30 * 24 * 60 * 60}`);
   res.json({
     name: `Wrapped Token Hash #${id} — ${templateName}`,
-    description: `This Token Hash is represented as a ${templateName} with token_hash ${hash}`,
-    image: `https://tokenhash.jonathanchomko.com/api/image/${id}/${hash}/${template}.png`,
-    animation_url: `https://tokenhash.jonathanchomko.com/api/render/${id}/${hash}/${template}.html`,
+    description: `This Token Hash is represented as a ${templateName} with token_hash ${hash}.`,
+    image: `https://tokenhash.jonathanchomko.com/api/image/${hash}/${template}.png`,
+    animation_url: `https://tokenhash.jonathanchomko.com/api/render/${hash}/${template}.html`,
   });
 }

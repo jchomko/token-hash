@@ -11,11 +11,10 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const id = req.query.id as string;
   const hash = req.query.hash as string;
   const template = (req.query.template as string).replace(".png", "");
 
-  const html = await loadTemplateWithTokenHash(template as Template, id, hash);
+  const html = await loadTemplateWithTokenHash(template as Template, hash);
 
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
@@ -30,7 +29,7 @@ export default async function handler(
   const imageBuffer = await content.screenshot({ omitBackground: true });
   res.setHeader(
     "Content-Disposition",
-    `inline; filename="tokenhash-${id}-${hash}-${template}.png"`
+    `inline; filename="tokenhash-${hash}-${template}.png"`
   );
   res.setHeader("Cache-Control", `public, s-maxage=${6 * 30 * 24 * 60 * 60}`);
   return res.status(200).send(imageBuffer);

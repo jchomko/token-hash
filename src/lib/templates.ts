@@ -11,15 +11,13 @@ const EXAMPLE_TOKEN_ID = {
 const getGeneratorURL = (id: string) => `https://generator.artblocks.io/${id}`;
 
 const REGEX =
-  /(let tokenData = {"tokenId":")(\d+)(","hash":")(0x[a-zA-Z0-9]+)("})/gi;
+  /(let tokenData = {"tokenId":"\d+","hash":")(0x[a-zA-Z0-9]+)("})/gi;
 
 export async function loadTemplateWithTokenHash(
   template: Template,
-  tokenId: string,
   tokenHash: string
 ) {
   const response = await fetch(getGeneratorURL(EXAMPLE_TOKEN_ID[template]));
   const content = await response.text();
-
-  return content.replace(REGEX, `$1${tokenId}$3${tokenHash}$5`);
+  return content.replace(REGEX, `$1${tokenHash}$3`);
 }
