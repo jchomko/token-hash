@@ -1,7 +1,7 @@
 import { Template } from "@/lib/templates";
 import { loadTemplateWithTokenHash } from "@/lib/templates";
 import type { NextApiRequest, NextApiResponse } from "next";
-import puppeteer, { Viewport } from "puppeteer";
+import { webkit } from "playwright";
 
 const VIEWPORT_FOR_TEMPLATE: Record<Template, Viewport> = {
   [Template.Fidenza]: { width: 1000, height: 1200 },
@@ -16,12 +16,11 @@ export default async function handler(
 
   const html = await loadTemplateWithTokenHash(template as Template, hash);
 
-  const browser = await puppeteer.launch();
+  const browser = await webkit.launch();
   const page = await browser.newPage();
 
-  await page.setViewport(VIEWPORT_FOR_TEMPLATE[template as Template]);
+  await page.setViewportSize(VIEWPORT_FOR_TEMPLATE[template as Template]);
   await page.setContent(html);
-  await page.emulateMediaType("screen");
 
   const content = await page.$("body");
   if (!content) return res.status(500).end();
